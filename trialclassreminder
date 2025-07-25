@@ -1,0 +1,47 @@
+function sendTrialClassReminderEmail() {
+  const sheet = SpreadsheetApp.openById("1JfcoB6y93SUkwodzpPenL_dDNdThUR1UmbpQD2_H6uU").getSheetByName("Upcoming Free Trials");
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const parentFirstName = data[5][0]; // Column A
+  const email = data[5][1];           // Column B
+  const childFirstName = data[5][3];  // Column D
+  const trialDateRaw = data[5][5];    // Column F
+  const sentStatus = data[5][10];     // Column K
+
+  if (!trialDateRaw || !email || sentStatus === 'Sent' || email === 'Email') return;
+
+  const trialDate = new Date(trialDateRaw);
+  const trialDay = new Date(trialDate.getFullYear(), trialDate.getMonth(), trialDate.getDate());
+
+  if (trialDay.getTime() === today.getTime()) {
+    const formattedDate = Utilities.formatDate(now, Session.getScriptTimeZone(), "MMMM d, yyyy");
+
+    const htmlMessage = `
+      <p>Hello ${parentFirstName},</p>
+      <p>Thank you so much for signing up for a free trial class with Mountain House Youth Soccer League!</p>
+      <p>This is a reminder that your child, <strong>${childFirstName}</strong>, has his/her trial class<br>
+      <strong>TODAY, ${formattedDate}, @6PM</strong> at Wicklund Elementary School.</p>
+      <p><strong>Address:</strong><br>
+      300 E Legacy Dr,<br>
+      Mountain House, CA 95391</p>
+      <p>After the trial class, please register through this link below for the practices and matches:<br>
+      <a href="https://www.mountainhouseysl.com/registration">https://www.mountainhouseysl.com/registration</a></p>
+      <p>If you have questions, please reach out to us via text or phone call.</p>
+      <p>Kindly,<br>MHYSL Staff<br>info@mountainhouseysl.com<br>209 200-8604</p>
+      <p style="text-align:left; margin-top:30px;">
+        <img src="https://drive.google.com/uc?export=view&id=13ToES7YixhPw4CAXjJplHpDUsBXa7mtq" width="120" alt="MHYSL Logo">
+      </p>
+    `;
+
+    MailApp.sendEmail({
+      to: email,
+      subject: `MHYSL FREE TRIAL CLASS REMINDER for ${childFirstName}`,
+      htmlBody: htmlMessage
+    });
+
+    sheet.getRange(6, 11).setValue('Sent'); // Column K of row 6
+    Logger.log(`Email sent to: ${email}`);
+  }
+}
