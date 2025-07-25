@@ -4,13 +4,19 @@ function sendTrialClassReminderEmail() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const parentFirstName = data[5][0]; // Column A
-  const email = data[5][1];           // Column B
-  const childFirstName = data[5][3];  // Column D
-  const trialDateRaw = data[5][5];    // Column F
-  const sentStatus = data[5][10];     // Column K
+  const rowIndex = 5; // Row 6 (0-indexed)
+  const row = data[rowIndex];
 
-  if (!trialDateRaw || !email || sentStatus === 'Sent' || email === 'Email') return;
+  const parentFirstName = row[0];  // Column A
+  const email = row[1];            // Column B
+  const childFirstName = row[3];   // Column D
+  const trialDateRaw = row[5];     // Column F
+  const sentStatus = row[10];      // Column K
+
+  if (!trialDateRaw || !email || sentStatus === 'Sent' || email === 'Email') {
+    Logger.log("Skipping: Trial date missing, email missing, already sent, or placeholder.");
+    return;
+  }
 
   const trialDate = new Date(trialDateRaw);
   const trialDay = new Date(trialDate.getFullYear(), trialDate.getMonth(), trialDate.getDate());
@@ -26,9 +32,9 @@ function sendTrialClassReminderEmail() {
       <p><strong>Address:</strong><br>
       300 E Legacy Dr,<br>
       Mountain House, CA 95391</p>
-      <p>After the trial class, please register through this link below for the practices and matches:<br>
+      <p>After the trial class, please register through this link:<br>
       <a href="https://www.mountainhouseysl.com/registration">https://www.mountainhouseysl.com/registration</a></p>
-      <p>If you have questions, please reach out to us via text or phone call.</p>
+      <p>If you have questions, feel free to contact us via text, phone, or email.</p>
       <p>Kindly,<br>MHYSL Staff<br>info@mountainhouseysl.com<br>209 200-8604</p>
       <p style="text-align:left; margin-top:30px;">
         <img src="https://drive.google.com/uc?export=view&id=13ToES7YixhPw4CAXjJplHpDUsBXa7mtq" width="120" alt="MHYSL Logo">
@@ -41,7 +47,9 @@ function sendTrialClassReminderEmail() {
       htmlBody: htmlMessage
     });
 
-    sheet.getRange(6, 11).setValue('Sent'); // Column K of row 6
-    Logger.log(`Email sent to: ${email}`);
+    sheet.getRange(rowIndex + 1, 11).setValue('Sent'); // Column K
+    Logger.log(`✅ Email sent to: ${email}`);
+  } else {
+    Logger.log("Trial date does not match today.");
   }
 }
