@@ -1,0 +1,90 @@
+function sendTrialClassFollowUpEmails() {
+const sheet = SpreadsheetApp.openById("1JfcoB6y93SUkwodzpPenL_dDNdThUR1UmbpQD2_H6uU").getSheetByName("Free Trial Kids");
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+
+  // Get yesterday's date
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const yesterdayString = Utilities.formatDate(yesterday, Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+  for (let i = 1; i < data.length; i++) {
+    const attended = data[i][0];           // Column A: Attended?
+    const followUp = data[i][1];           // Column B: Follow Up?
+    const parentFirstName = data[i][5];    // Column E: Parent's First Name
+    const email = data[i][6];              // Column G: Email
+    const childFirstName = data[i][8];     // Column I: Child's First Name
+    const trialDateRaw = data[i][9];      // Column K: Trial Date
+
+    if (!trialDateRaw) continue;
+
+    // Format the trial date to compare with yesterday
+    const trialDate = new Date(trialDateRaw);
+    const trialDateString = Utilities.formatDate(trialDate, Session.getScriptTimeZone(), "yyyy-MM-dd");
+
+    // ✅ Only send if the trial date is yesterday, follow-up not done, and email is valid
+    if (trialDateString === yesterdayString && followUp !== true && email && email.includes("@")) {
+      let subject = "";
+      let htmlMessage = "";
+      const formattedDate = Utilities.formatDate(now, Session.getScriptTimeZone(), "MMMM d, yyyy");
+
+      if (attended === true) {
+        // Thank-you email
+        subject = `Thank you for attending your MHYSL Free Trial Class!`;
+        htmlMessage = `
+          <p>Hello ${parentFirstName},</p>
+
+          <p>Thank you for bringing your child, ${childFirstName}, to the Mountain House Youth Soccer League trial class yesterday!</p>
+
+          <p>We're excited to help your child grow through the game of soccer and hope you enjoyed the session.</p>
+          
+          <p>If you'd like to register, please visit: <a href="https://www.mountainhouseysl.com/registration">https://www.mountainhouseysl.com/registration</a></p>
+
+          <p>If you have any questions, feel free to contact us via text, phone, or email.</p>
+
+          <p>Kindly,<br>
+          MHYSL Staff<br>
+          info@mountainhouseysl.com<br>
+          209 200-8604</p>
+
+          <p style="text-align:left; margin-top:30px;">
+            <img src="https://drive.google.com/uc?export=view&id=13ToES7YixhPw4CAXjJplHpDUsBXa7mtq" width="120" alt="MHYSL Logo">
+          </p>
+        `;
+      } else {
+        // No-show email
+        subject = `Need Help? Let's Reschedule Your MHYSL Free Trial Class`;
+        htmlMessage = `
+          <p>Hello ${parentFirstName},</p>
+
+          <p>We noticed your child, ${childFirstName}, wasn't able to attend the trial class at Mountain House Youth Soccer League.</p>
+
+          <p>If you're still interested, we'd love to welcome you! You can reschedule your trial here:<br>
+          <a href="https://www.mountainhouseysl.com/freetrial">https://www.mountainhouseysl.com/freetrial</a></p>
+
+          <p>If you had any issues, feel free to reach out — we're happy to help with rescheduling, questions, or anything else.</p>
+
+          <p>Kindly,<br>
+          MHYSL Staff<br>
+          info@mountainhouseysl.com<br>
+          209 200-8604</p>
+
+          <p style="text-align:left; margin-top:30px;">
+            <img src="https://drive.google.com/uc?export=view&id=13ToES7YixhPw4CAXjJplHpDUsBXa7mtq" width="120" alt="MHYSL Logo">
+          </p>
+        `;
+      }
+
+      MailApp.sendEmail({
+        to: email,
+        subject: subject,
+        htmlBody: htmlMessage
+      });
+
+      // ✅ Mark Follow Up as done (Column B)
+      sheet.getRange(i + 1, 2).setValue(true);
+
+      Logger.log(`✅ ${attended ? "Thank-you" : "No-show"} email sent to: ${email}`);
+    }
+  }
+}
